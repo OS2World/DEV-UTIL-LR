@@ -1,0 +1,155 @@
+*
+*   In the beginning of grammar definition file must
+*            be three symbols: 'LR('
+*
+
+LR
+(
+
+*
+*  After opening bracket must be set of obligatory and facultative
+*  options.
+*
+
+*
+*  Option 'NAME' : specifies names (but not extensions) of the files
+*        that will be created during work of the parser.
+*
+
+   NAME(SAMPLE)
+
+*
+*   Option 'TITLE' : defines title for your grammar.
+*
+
+   TITLE('Sample of grammar')
+
+*
+*   Option 'STRUCT' : tells the parser to create
+*   STR-file and N-file.
+*
+
+   STRUCT
+
+*
+*   Option 'PRINT' : tells the parser to create LR-file.
+*
+
+   PRINT
+
+*
+*   Option 'RULES' : in brackets '()' that follow this option
+*   you must define your grammar using GDL.
+*
+
+
+   RULES
+   (
+
+
+*   The first <<rule>> after opening bracket '(' is assumed as
+*   start nonterminal for this grammar
+*   S( DECLARATION(ZERO) ASSIGN(REPEAT) )
+*      Nonterminal options:
+*          ZERO   -   means that previous nonterminal may repeat
+*                     0, 1 or more times
+*           REPEAT -   means that previous nonterminal may repeat
+*                      1 or more times
+*      Example:
+*         S ( ASSIGN ASSIGN )
+*         S ( DECLARATION DECLARATION ASSIGN )
+*
+
+      S                 ( ASSIGNS )
+
+*
+*   Here nonterminal ASSIGNS is defined two times it means that
+*   this nonterminal may be reduced as
+*   ( ASSIGNS ASSIGN ) or as ( ASSIGN ).
+*
+
+      ASSIGNS           ( ASSIGNS ASSIGN )
+                        ( ASSIGN )
+
+      ASSIGN            ( IDENTIFIER assign_sign E semi )
+      E                 ( ADD )
+                        ( SUB )
+                        ( T )
+      ADD               ( E plus T )
+      SUB               ( E minus T )
+      T                 ( MUL )
+                        ( DIV )
+                        ( F   )
+      MUL               ( T mul F )
+      DIV               ( T div F )
+      F                 ( NEG )
+                        ( IDENTIFIER )
+                        ( FLOAT )
+                        ( op E cp )
+      NEG               ( minus F )
+
+*
+*  Nonterminal options:
+*     SECONDARY - means that previous nonterminal must be reduced
+*                 only when no other non-secondary nonterminals can
+*                 be reduced.
+*
+
+      IDENTIFIER        ( ALPHA(SECONDARY) ALPHA_NUMERIC (ZERO) )
+
+*
+*  Nonterminal options:
+*     OPTIONAL  - means that preceding nonterminal may repeat
+*                       0 or 1 times.
+*   Example:
+*      F ( p(optional) q ) means F ( p q ) or F ( q )
+*
+
+      FLOAT             ( point(optional) DIGIT(repeat) EXP )
+      FLOAT             ( DIGIT(repeat) point _DIGIT(zero) EXP )
+      EXP               ( _e_ SIGN(optional) DIGIT(repeat) )
+
+*
+*   Terminal options:
+*     CHOICE    - means that preceding string (enclosed in '') must be
+*                 replaced with one of it's component
+*     Example:
+*           SIGN ('+-'(CHOICE)) means SIGN ('+') or SIGN ('-')
+*
+
+      SIGN              ( '+-'(CHOICE))
+      ALPHA             ( '_QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm'(Choice) )
+      ALPHA_NUMERIC     ( '_QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789'(Choice) )
+
+      minus             ( '-' )
+      plus              ( '+' )
+      div               ( '/' )
+      mul               ( '*' )
+
+      semi              ( ';' )
+      DIGIT             ( '0123456789'(choice) )
+      _DIGIT            ( DIGIT )
+      _e_               ( 'eE'(choice) )
+      point             ( '.' )
+      op                ( '(' )
+      cp                ( ')' )
+      assign_sign       ( '=' )
+
+   )
+
+
+*
+*  Here can be used any NONTERMINAL option with brackets '()' following
+*  it. In these brackets must be list of nonterminals. This usage means
+*  that mentioned nonterminals have this option (attribute)
+*  e.g. : OPTIONAL (minus) means that nonterminal 'minus' will
+*  be used as 'minus(optional)' during compilation of the grammar.
+*
+
+
+   IGNORE   ( semi op cp assign_sign minus plus mul div mod)
+   STRING   ( IDENTIFIER FLOAT )
+   OPTIONAL ( EXP )
+
+)
+

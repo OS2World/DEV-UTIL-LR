@@ -1,0 +1,1363 @@
+*_____________________________________________________________________________
+* SQL V2R3 - Structured Query Language
+* Philip R Brenan,  Transcendental Automation,  1992
+*_____________________________________________________________________________
+*
+LR
+ (name(LR_SQL)     title('SQL - Structured Query Language')
+  print struct code
+  rules
+   (S              (-(zero ignore) SQL_STATEMENTL)
+    SQL_STATEMENTL (SQL_STATEMENTS(repeat))
+*_____________________________________________________________________________
+* SQL statements
+*_____________________________________________________________________________
+*
+    SQL_STATEMENTS (SELECT_STATEMENT)
+                   (CREATE_ALIAS)
+                   (ALTER_DATABASE)
+                   (CREATE_DATABASE)
+                   (ALTER_INDEX)
+                   (CREATE_INDEX)
+                   (ALTER_STOGROUP)
+                   (CREATE_STOGROUP)
+                   (CREATE_SYNONYM)
+                   (ALTER_TABLE)
+                   (CREATE_TABLE)
+                   (ALTER_TS)
+                   (CREATE_TS)
+
+                   (BEGIN_DECLARE_SECTION)
+                   (CLOSE_CURSOR)
+                   (COMMENT_ON)
+                   (COMMIT)
+                   (CONNECT)
+                   (CREATE_VIEW)
+                   (DECLARE_CURSOR)
+                   (DECLARE_STATEMENT)
+                   (DECLARE_TABLE)
+                   (DELETE)
+                   (DESCRIBE)
+                   (DROP)
+                   (END_DECLARE_SECTION)
+                   (EXECUTE)
+                   (EXECUTE_IMMEDIATE)
+                   (EXPLAIN)
+                   (FETCH)
+                   (GRANT)
+                   (INCLUDE)
+                   (INSERT)
+                   (LOCK_TABLE)
+                   (OPEN)
+                   (PREPARE)
+                   (REVOKE)
+                   (ROLLBACK)
+                   (SELECT_INTO)
+                   (SET_CURRENT_PACKAGESET)
+                   (SET_CURRENT_SQLID)
+                   (SET)
+                   (UPDATE)
+                   (WHENEVER)
+
+*_____________________________________________________________________________
+* Select statement
+*_____________________________________________________________________________
+*
+    SELECT_STATEMENT
+                   (FULL_SELECT SELECT_FETCH    (zero)   END)
+                   (FULL_SELECT SELECT_ORDER_BY (repeat) END)
+                   (FULL_SELECT SELECT_UPDATE            END)
+    SELECT_FETCH   (for fetch only)
+                   (SELECT_OPTIMIZE_FOR)
+    SELECT_ORDER_BY(SELECT_ORDER_BY_CLAUSE SELECT_FETCH(optional))
+    SELECT_ORDER_BY_CLAUSE
+                   (order by SELECT_ORDER_COLUMN SELECT_ORDER_COLUMN2(zero))
+    SELECT_ORDER_COLUMN2
+                   (comma SELECT_ORDER_COLUMN)
+    SELECT_ORDER_COLUMN
+                   (SELECT_COLUMN ASC_DESC(optional))
+                   (INTEGER       ASC_DESC(optional))
+    ASC_DESC       ('asc' (mixed))
+                   ('desc'(mixed))
+    SELECT_OPTIMIZE_FOR
+                   (optimize for INTEGER row)
+    SELECT_UPDATE  (for update of SELECT_COLUMN SELECT_COLUMN2(zero) SELECT_OPTIMIZE_FOR(optional))
+
+
+    FULL_SELECT    (SELECT                   SELECT_UNIONS(zero))
+                   (openp FULL_SELECT closep SELECT_UNIONS(zero))
+    SELECT_UNIONS  (SELECT_UNION SELECT)
+                   (SELECT_UNION openp FULL_SELECT closep)
+    SELECT_UNION   (union)
+                   (union all)
+
+    SELECT         (select SELECT_RANGE(optional) SELECT_CLAUSE
+                    SELECT_FROM
+                    SELECT_WHERE   (optional)
+                    SELECT_GROUP_BY(optional)
+                    SELECT_HAVING  (optional)
+                   )
+    SELECT_RANGE   ('all'     (mixed))
+                   ('distinct'(mixed))
+    SELECT_CLAUSE  (SELECT_ALL)
+                   (SELECT_COLE SELECT_COLE2(zero))
+    SELECT_COLE    (SELECT_COLE_TABLE)
+                   (EXPRESSION)
+    SELECT_COLE2   (comma SELECT_COLE)
+    SELECT_ALL     ('*')
+
+    SELECT_FROM    (from  SELECT_TABLE SELECT_TABLE2(zero))
+    SELECT_TABLE2  (comma SELECT_TABLE)
+
+    SELECT_WHERE   (where SEARCH_COND)
+
+    SELECT_GROUP_BY(group by SELECT_COLUMN SELECT_COLUMN2(zero))
+
+    SELECT_HAVING  (having SEARCH_COND)
+
+    SEARCH_COND    (not(optional) PRED_SEARCH PRED_SEARCH2(zero))
+    PRED_SEARCH    (PREDICATE)
+                   (openp SEARCH_COND closep)
+    PRED_SEARCH2   (AND_OR not(optional) PRED_SEARCH)
+    AND_OR         ('and' (mixed))
+                   ('or'  (mixed))
+
+    PREDICATE
+     'BASIC'       (EXPRESSION PRED_OP SELECT_EXPR)
+     'BETWEEN'     (EXPRESSION    not(optional) between EXPRESSION2 and EXPRESSION3)
+     'EXISTS'      (exists openp SELECT closep)
+     'IN_SELECT'   (EXPRESSION    not(optional) in openp SELECT closep)
+     'IN'          (EXPRESSION    not(optional) in openp IN_EXPR IN_EXPRS(zero) closep)
+     'LIKE'        (EXPRESSION    not(optional) like LIKE_EXPR ESCAPE(optional))
+     'NULL'        (EXPRESSION is not(optional) null)
+
+    SELECT_EXPR2   (comma SELECT_EXPR)
+    SELECT_EXPR    (EXPRESSION)
+                   (QUANTIFIER(optional) openp SELECT closep)
+    QUANTIFIER     ('some'(mixed))
+                   ('any' (mixed))
+                   ('all' (mixed))
+    LIKE_EXPR      (SPECIAL_REGISTER)
+                   (HOST_VARIABLE)
+                   (STRING)
+    ESCAPE         (escape ESCAPE_EXPR)
+    ESCAPE_EXPR    (HOST_VARIABLE)
+                   (STRING)
+    IN_EXPR        (SPECIAL_REGISTER)
+                   (HOST_VARIABLE)
+                   (STRING)
+                   (NUMBER)
+    IN_EXPRS       (comma IN_EXPR)
+
+    PRED_OP        ('=') ('!=') ('<>') ('>') ('!>') ('<') ('!<') ('>=') ('<=')
+
+    EXPRESSION     (PLUS_EXPR   CONCAT_EXPRS(zero))
+    CONCAT_EXPRS   (CONCAT      PLUS_EXPR)
+    PLUS_EXPR      (TIMES_EXPR  PLUS_EXPRS(zero))
+    PLUS_EXPRS     (PLUS        TIMES_EXPR)
+    TIMES_EXPR     (      MONAD(optional) OPERAND TIMES_EXPRS(zero))
+    TIMES_EXPRS    (TIMES MONAD(optional) OPERAND)
+    MONAD          ('+') ('-')
+
+    EXPRESSION2    (EXPRESSION)
+    EXPRESSION3    (EXPRESSION)
+    EXPRESSIONO    (comma EXPRESSION)
+    EXPRESSIONS    (comma EXPRESSION)
+
+    OPERAND        (FUNCTION                DURATION(optional))
+                   (openp EXPRESSION closep DURATION(optional))
+                   (SPECIAL_REGISTER)
+                   (HOST_VARIABLE           DURATION(optional))
+                   (SELECT_COLUMN           DURATION(optional))
+                   (CONSTANT                DURATION(optional))
+
+    SELECT_TABLE   (FAR_TABLE_NAME)
+    FAR_TABLE_NAME
+     'TABLE_FAR'   (VAR1 dot VAR2 dot VAR3 CID(optional))
+     'TABLE_Q'     (VAR1 dot VAR2          CID(optional))
+     'TABLE_NQ'    (VAR1                   CID(optional))
+
+    CID            (VAR)
+
+    SELECT_COLE_TABLE
+     'TABLE_FAR'   (VAR1 dot VAR2 dot VAR3 dot SELECT_ALL)
+     'TABLE_Q'     (VAR1 dot VAR2 dot SELECT_ALL)
+     'TABLE_NQ'    (VAR1 dot SELECT_ALL)
+
+    SELECT_COLUMN  (FAR_COLUMN_NAME)
+    FAR_COLUMN_NAME
+     'FAR_COLUMN'  (VAR1 dot VAR2 dot VAR3 dot VAR4)
+     'TABLE_COLUMN'(VAR1 dot VAR2 dot VAR3)
+     'CID_COLUMN'  (VAR1 dot VAR2)
+     'COLUMN'      (VAR1)
+    VAR1           (VAR)
+    VAR2           (VAR)
+    VAR3           (VAR)
+    VAR4           (VAR)
+
+    SELECT_COLUMN2 (comma SELECT_COLUMN)
+
+    HOST_VARIABLE2 (comma HOST_VARIABLE)
+    HOST_VARIABLE  (colon HOST_IDENTIFIER HOST_IDENTIFIERO(optional) INDICATORO(optional))
+    HOST_IDENTIFIERO
+                   (dot HOST_IDENTIFIER)
+    HOST_IDENTIFIER
+                   (VAR)
+    INDICATORO     (indicator(optional) colon HOST_IDENTIFIER HOST_IDENTIFIERO)
+    indicator      ('indicator'   (mixed))
+
+    SPECIAL_REGISTER
+                   (user)
+                   (current date)
+                   (current time)
+                   (current timestamp)
+                   (current timezone)
+                   (current sqlid)
+                   (current server)
+                   (current packageset)
+
+    DURATION       ('year'        (mixed))
+                   ('years'       (mixed))
+                   ('month'       (mixed))
+                   ('months'      (mixed))
+                   ('day'         (mixed))
+                   ('days'        (mixed))
+                   ('hour'        (mixed))
+                   ('hours'       (mixed))
+                   ('minute'      (mixed))
+                   ('minutes'     (mixed))
+                   ('second'      (mixed))
+                   ('seconds'     (mixed))
+                   ('microsecond' (mixed))
+                   ('microseconds'(mixed))
+
+    FUNCTION       (FUNCTION_NAME      openp EXPRESSION                        closep)
+                   (CHAR_FUNCTION      openp EXPRESSION DATE_FORMATO(optional) closep)
+                   (VALUE_FUNCTION     openp EXPRESSION EXPRESSIONS (repeat)   closep)
+                   (TIMESTAMP_FUNCTION openp EXPRESSION EXPRESSIONO (optional) closep)
+                   (SUBSTR_FUNCTION    openp EXPRESSION comma EXPRESSION2
+                                           EXPRESSIONO(optional)             closep)
+                   (DECIMAL_FUNCTION   openp EXPRESSION INTEGER2O(optional)    closep)
+                   (COLUMN_FUNCTION    openp EXPRESSION                        closep)
+                   (COLUMN_FUNCTION    openp ALL      EXPRESSION               closep)
+                   (COLUMN_FUNCTION    openp DISTINCT SELECT_COLUMN            closep)
+                   (COUNT_FUNCTION     openp DISTINCT SELECT_COLUMN            closep)
+                   (COUNT_FUNCTION     openp TIMES                             closep)
+    COUNT_FUNCTION ('count'    (mixed))
+    ALL            ('all'      (mixed))
+    DISTINCT       ('distinct' (mixed))
+    COLUMN_FUNCTION
+                   ('avg'   (mixed))
+                   ('min'   (mixed))
+                   ('max'   (mixed))
+                   ('sum'   (mixed))
+    DECIMAL_FUNCTION
+                   ('decimal'    (mixed))
+    INTEGER2O      (comma INTEGER INTEGER1O)
+    INTEGER1O      (comma INTEGER)
+
+    SUBSTR_FUNCTION('substr'     (mixed))
+    VALUE_FUNCTION ('value'      (mixed))
+    TIMESTAMP_FUNCTION
+                   ('timestamp'  (mixed))
+    CHAR_FUNCTION  ('char'       (mixed))
+    DATE_FORMATO   (comma DATE_FORMAT)
+    DATE_FORMAT    ('iso'        (mixed))
+                   ('usa'        (mixed))
+                   ('eur'        (mixed))
+                   ('jis'        (mixed))
+                   ('local'      (mixed))
+    FUNCTION_NAME  ('date'       (mixed))
+                   ('day'        (mixed))
+                   ('days'       (mixed))
+                   ('digits'     (mixed))
+                   ('float'      (mixed))
+                   ('hex'        (mixed))
+                   ('hour'       (mixed))
+                   ('integer'    (mixed))
+                   ('length'     (mixed))
+                   ('microsecond'(mixed))
+                   ('minute'     (mixed))
+                   ('month'      (mixed))
+                   ('second'     (mixed))
+                   ('time'       (mixed))
+                   ('vargraphic' (mixed))
+                   ('year'       (mixed))
+
+    CONCAT         ('||') ('concat'(mixed))
+    PLUS           ('+')
+                   ('-')
+    TIMES          ('*')
+                   ('/')
+*_____________________________________________________________________________
+* Create Alias
+*_____________________________________________________________________________
+*
+    CREATE_ALIAS   (create alias ALIAS_NAME for TABLE_NAME END)
+    ALIAS_NAME     (VAR)
+    TABLE_NAME     (VAR1 dot VAR2)
+                   (VAR1)
+*_____________________________________________________________________________
+* Alter/Create Database
+*_____________________________________________________________________________
+*
+    ALTER_DATABASE (alter database DATABASE_NAME
+                    CREATE_DATABASE_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_DATABASE(create database DATABASE_NAME
+                    CREATE_DATABASE_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_DATABASE_OPTIONS
+                   (STOGROUP)
+                   (BUFFERPOOL3)
+                   (ROSHARE)
+    STOGROUP       (stogroup   STOGROUP_NAME)
+    BUFFERPOOL3    (bufferpool BP3)
+    BP3            (bp0)
+                   (bp1)
+                   (bp2)
+                   (bp32k)
+    ROSHARE        (roshare owner)
+                   (roshare read)
+*_____________________________________________________________________________
+* Alter/Create Index
+*_____________________________________________________________________________
+*
+    ALTER_INDEX    (alter index INDEX_NAME
+                    ALTER_INDEX_OPTIONS(choice optional)
+                    END
+                   )
+    ALTER_INDEX_OPTIONS
+                   (USING_BLOCK)
+                   (FREEPAGE)
+                   (PCTFREE)
+                   (CLUSTER)
+                   (SUBPAGES)
+                   (BUFFERPOOL2)
+                   (CLOSE)
+                   (DSETPASS)
+    CREATE_INDEX   (create unique(optional) index INDEX_NAME
+                    CREATE_INDEX_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_INDEX_OPTIONS
+                   (on TABLE_NAME openp INDEX_COLUMN INDEX_COLUMN2(zero) closep)
+                   (USING_BLOCK)
+                   (FREEPAGE)
+                   (PCTFREE)
+                   (CLUSTER)
+                   (SUBPAGES)
+                   (BUFFERPOOL2)
+                   (CLOSE)
+                   (DSETPASS)
+    INDEX_NAME     (VAR1 dot VAR2)
+                   (VAR1)
+    INDEX_COLUMN2  (comma INDEX_COLUMN)
+    INDEX_COLUMN   (COLUMN_NAME)
+                   (COLUMN_NAME asc)
+                   (COLUMN_NAME desc)
+    CLUSTER        (cluster)
+                   (cluster openp INDEX_PART INDEX_PART2(zero) closep)
+    INDEX_PART2    (comma INDEX_PART)
+    INDEX_PART     (part INTEGER INDEX_PART_OPTIONS(choice optional))
+    INDEX_PART_OPTIONS
+                   (values openp INDEX_VALUE INDEX_VALUE2(zero) closep)
+                   (USING_BLOCK)
+                   (FREEPAGE)
+                   (PCTFREE)
+    INDEX_VALUE2   (comma INDEX_VALUE)
+    INDEX_VALUE    (CONSTANT)
+    SUBPAGES       (subpages INTEGER)
+    BUFFERPOOL2    (bufferpool BP2)
+    BP2            (bp0)
+                   (bp1)
+                   (bp2)
+    CLOSE          (close yes)
+                   (close no)
+    DSETPASS       (dsetpass   PASSWORD)
+    USING_BLOCK    (using vcat VCAT)
+                   (using stogroup STOGROUP_NAME SPACE_OPTIONS(choice optional))
+    SPACE_OPTIONS  (priqty INTEGER)
+                   (secqty INTEGER)
+                   (erase  yes)
+                   (erase  no)
+    FREEPAGE       (freepage  INTEGER)
+    PCTFREE        (pctfree   INTEGER)
+*_____________________________________________________________________________
+* Alter/Create Stogroup
+*_____________________________________________________________________________
+*
+    ALTER_STOGROUP (alter stogroup STOGROUP_NAME
+                    ALTER_STOGROUP_OPTIONS(choice optional)
+                    END
+                   )
+    STOGROUP_NAME  (VAR)
+    STOGROUP_NAME2 (comma STOGROUP_NAME)
+    ALTER_STOGROUP_OPTIONS
+                   (ADD_VOLUMES)
+                   (REMOVE_VOLUMES)
+                   (password PASSWORD(optional))
+    ADD_VOLUMES    (add    volumes openp VOLUME VOLUME2(zero) closep)
+    REMOVE_VOLUMES (remove volumes openp VOLUME VOLUME2(zero) closep)
+
+    CREATE_STOGROUP(create stogroup STOGROUP_NAME
+                    CREATE_STOGROUP_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_STOGROUP_OPTIONS
+                   (volumes openp VOLUME VOLUME2(zero) closep)
+                   (vcat VCAT PASSWORD(optional))
+    VOLUME2        (comma VOLUME)
+    VOLUME         (VAR)
+    VCAT           (VAR)
+    PASSWORD       (VAR)
+*_____________________________________________________________________________
+* Create Synonym
+*_____________________________________________________________________________
+*
+    CREATE_SYNONYM (create synonym  SYNONYM_NAME for TABLE_NAME END)
+    SYNONYM_NAME   (VAR)
+*_____________________________________________________________________________
+* Alter/Create Table
+*_____________________________________________________________________________
+*
+    ALTER_TABLE    (alter table TABLE_NAME
+                    ALTER_TABLE_OPTIONS(choice optional)
+                    END
+                   )
+    ALTER_TABLE_OPTIONS
+                   (add COLUMN_NAME DATA_TYPE ALTER_COLUMN_OPTIONS(choice optional))
+                   (validproc null)
+                   (validproc PROC_NAME)
+                   (AUDIT)
+                   (add(optional) primary key openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+                   (add(optional) foreign key CONSTRAINT_NAME(optional)
+                    CREATE_CONSTRAINT_OPTIONS(choice optional)
+                   )
+                   (data capture none)
+                   (data capture changes)
+                   (drop primary key)
+                   (drop foreign key CONSTRAINT_NAME)
+    CONSTRAINT_NAME(VAR)
+    PROC_NAME      (VAR)
+    ALTER_COLUMN_OPTIONS
+                   (FOR_BIT)
+                   (FIELD_PROC)
+                   (not null with default)
+
+    CREATE_TABLE   (create table TABLE_NAME openp COLUMNS_LIKE closep
+                    CREATE_TABLE_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_TABLE_OPTIONS
+                   (TABLE_IN)
+                   (EDITPROC)
+                   (VALIDPROC)
+                   (AUDIT)
+                   (OBID)
+                   (DATACAPTURE)
+    TABLE_IN       (in DATABASE_NAME dot TABLESPACE_NAME)
+                   (in database DATABASE_NAME)
+    TABLESPACE_NAME(VAR)
+    EDITPROC       (editproc  PROC_NAME)
+    VALIDPROC      (validproc PROC_NAME)
+    AUDIT          (audit none)
+                   (audit changes)
+                   (audit all)
+    DATACAPTURE    (data capture none)
+                   (data capture changes)
+    OBID           (obid INTEGER)
+    COLUMNS_LIKE   (like TABLE_NAME)
+                   (COLUMN COLUMN2(zero))
+    COLUMN2        (comma  COLUMN)
+    COLUMN         (primary key openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+                   (unique      openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+                   (foreign key CONSTRAINT_NAME(optional)
+                    CREATE_CONSTRAINT_OPTIONS(choice optional)
+                   )
+                   (COLUMN_NAME DATA_TYPE COLUMN_OPTIONS(choice optional))
+    COLUMN_NAME    (VAR)
+    COLUMN_NAME2   (comma COLUMN_NAME)
+    COLUMN_OPTIONS (FOR_BIT)
+                   (NULLITY)
+
+    DATA_TYPE      (integer)  (int) (smallint)
+                   (float      COLUMN_WIDTH (optional))
+                   (decimal    DECIMAL_WIDTH(optional))
+                   (dec        DECIMAL_WIDTH(optional))
+                   (character  COLUMN_WIDTH (optional))
+                   (char       COLUMN_WIDTH (optional))
+                   (varchar    COLUMN_WIDTH (optional))
+                   (long varchar)
+                   (graphic    COLUMN_WIDTH (optional))
+                   (vargraphic COLUMN_WIDTH (optional))
+                   (long vargraphic)
+                   (date) (time) (timestamp)
+    COLUMN_WIDTH   (openp INTEGER closep)
+    DECIMAL_WIDTH  (openp PRECISION closep)
+                   (openp PRECISION comma SCALE closep)
+    PRECISION      (INTEGER)
+    SCALE          (INTEGER)
+
+    FOR_BIT        (for sbcs  data)
+                   (for mixed data)
+                   (for bit   data)
+
+
+    NULLITY        (not null FIELD_PROC(optional))
+                   (not null with default)
+                   (not null unique)
+    FIELD_PROC     (fieldproc PROC_NAME openp FIELD_PROC_P FIELD_PROC_P2(zero) closep)
+    FIELD_PROC_P   (CONSTANT)
+    FIELD_PROC_P2  (comma FIELD_PROC_P)
+
+
+    CREATE_CONSTRAINT_OPTIONS
+                   (openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+                   (references TABLE_NAME)
+                   (CONSTRAINT_DELETE)
+    CONSTRAINT_DELETE
+                   (on delete restrict)
+                   (on delete cascade)
+                   (on delete set null)
+*_____________________________________________________________________________
+* Alter/Create Tablespace
+*_____________________________________________________________________________
+*
+    ALTER_TS       (alter tablespace DB_TS
+                    ALTER_TS_OPTIONS(choice optional)
+                    END
+                   )
+    ALTER_TS_OPTIONS
+                   (BUFFERPOOL2)
+                   (LOCKSIZE)
+                   (CLOSE)
+                   (dsetpass   PASSWORD)
+                   (part       INTEGER)
+                   (freepage   INTEGER)
+                   (pctfree    INTEGER)
+                   (using vcat VCAT)
+                   (using stogroup STOGROUP_NAME)
+                   (priqty INTEGER)
+                   (secqty INTEGER)
+                   (ERASE)
+
+    CREATE_TS      (create tablespace TABLESPACE_NAME
+                    CREATE_TS_OPTIONS(choice optional)
+                    END
+                   )
+    CREATE_TS_OPTIONS
+                   (IN_DATABASE)
+                   (USING_BLOCK)
+                   (FREEPAGE)
+                   (PCTFREE)
+                   (TS_PARTS)
+                   (BUFFERPOOL3)
+                   (LOCKSIZE)
+                   (CLOSE)
+                   (DSETPASS)
+
+    IN_DATABASE    (in DATABASE_NAME)
+    TS_PARTS       (TS_NUMPARTS)
+                   (segsize  INTEGER)
+    TS_NUMPARTS    (numparts INTEGER)
+                   (numparts INTEGER
+                    openp TS_NUMPART TS_NUMPART2(zero) closep)
+    TS_NUMPART     (part INTEGER
+                    USING_BLOCK(optional)
+                    FREEPAGE   (optional)
+                    PCTFREE    (optional)
+                   )
+    TS_NUMPART2    (comma TS_NUMPART)
+    LOCKSIZE       (locksize any)
+                   (locksize page)
+                   (locksize tablespace)
+                   (locksize table)
+    ERASE          (erase  yes)
+                   (erase  no)
+*_____________________________________________________________________________
+* Begin/End Declare Section
+*_____________________________________________________________________________
+*
+    BEGIN_DECLARE_SECTION
+                   (begin declare section END)
+    END_DECLARE_SECTION
+                   (end declare section END)
+*_____________________________________________________________________________
+* Create View
+*_____________________________________________________________________________
+*
+    CREATE_VIEW    (create view VIEW_NAME VIEW_COLUMNS(optional)
+                    as SELECT
+                    WITH_CHECK_OPTION(optional)
+                    END
+                   )
+    VIEW_COLUMNS   (openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+    WITH_CHECK_OPTION
+                   (with check option)
+*_____________________________________________________________________________
+* CLOSE
+*_____________________________________________________________________________
+*
+    CLOSE_CURSOR   (close CURSOR_NAME END)
+    CURSOR_NAME    (VAR)
+*_____________________________________________________________________________
+* COMMENT ON
+*_____________________________________________________________________________
+*
+    COMMENT_ON     (COMMENT_LABEL on COMMENT_OBJECT is STRING END)
+                   (COMMENT_LABEL on TABLE_NAME openp COMMENT_COLUMN COMMENT_COLUMN2 closep END)
+    COMMENT_LABEL  (comment)
+                   (label)
+    COMMENT_OBJECT (table TABLE_NAME)
+                   (alias ALIAS_NAME)
+                   (column TABLE_COLUMN_NAME)
+    COMMENT_COLUMN (COLUMN_NAME is STRING)
+    COMMENT_COLUMN2(comma COMMENT_COLUMN)
+    TABLE_COLUMN_NAME
+                   (VAR1 dot VAR2)
+                   (VAR1 dot VAR2 dot VAR3)
+*_____________________________________________________________________________
+* COMMIT/ROLLBACK
+*_____________________________________________________________________________
+*
+    COMMIT         (commit   work(optional) END)
+    ROLLBACK       (rollback work(optional) END)
+*_____________________________________________________________________________
+* CONNECT
+*_____________________________________________________________________________
+*
+    CONNECT        (connect END)
+                   (connect to HOST_VARIABLE END)
+                   (connect to LOCATION_NAME END)
+                   (connect reset)
+    LOCATION_NAME  (VAR)
+*_____________________________________________________________________________
+* DECLARE
+*_____________________________________________________________________________
+*
+    DECLARE_CURSOR (declare TABLE_NAME cursor WITH_HOLD(optional)
+                    for DECLARE_FOR
+                    END
+                   )
+    WITH_HOLD      (with hold)
+    DECLARE_FOR    (SELECT_STATEMENT)
+                   (STATEMENT_NAME)
+
+    DECLARE_STATEMENT
+                   (declare TABLE_NAME STATEMENT_NAME2(zero) statement END)
+    STATEMENT_NAME (VAR)
+    STATEMENT_NAME2(comma STATEMENT_NAME)
+
+    DECLARE_TABLE  (declare
+                    TABLE_NAME
+                    table openp DECLARE_COLUMN DECLARE_COLUMN2(zero) closep
+                    END
+                   )
+    DECLARE_COLUMN2(comma DECLARE_COLUMN)
+    DECLARE_COLUMN (COLUMN_NAME DATA_TYPE DECLARE_NULLITY(optional))
+    DECLARE_NULLITY(not null)
+                   (not null with default)
+*_____________________________________________________________________________
+* Delete
+*_____________________________________________________________________________
+*
+    DELETE         (delete from SELECT_TABLE
+                    WHERE_TYPE(optional)
+                    END
+                   )
+    WHERE_TYPE     (where SEARCH_COND)
+                   (where current of CURSOR_NAME)
+*_____________________________________________________________________________
+* Describe
+*_____________________________________________________________________________
+*
+    DESCRIBE       (describe DESCRIBE_OBJECT
+                    into DESCRIPTOR_NAME
+                    USING(optional)
+                    END
+                   )
+    DESCRIBE_OBJECT(STATEMENT_NAME)
+                   (table HOST_VARIABLE)
+    DESCRIPTOR_NAME(VAR)
+*_____________________________________________________________________________
+* Drop
+*_____________________________________________________________________________
+*
+    DROP           (drop         DROP_OBJECT)
+    DROP_OBJECT    (alias        ALIAS_NAME)
+                   (database     DATABASE_NAME)
+                   (index        INDEX_NAME)
+                   (stogroup     STOGROUP_NAME)
+                   (synonym      SYNONYM_NAME)
+                   (table        TABLE_NAME)
+                   (tablespace   DB_TS)
+                   (view         VIEW_NAME)
+                   (PACKAGE_PROGRAM COLLECTION_ID dot PACKAGE_ID VERSION(optional))
+    VERSION        (version(optional) VERSION_ID)
+    COLLECTION_ID  (VAR)
+    PACKAGE_ID     (VAR)
+    VERSION_ID     (VAR)
+    PACKAGE_PROGRAM(package)
+                   (program)
+    VIEW_NAME      (TABLE_NAME)
+*_____________________________________________________________________________
+* Execute
+*_____________________________________________________________________________
+*
+    EXECUTE        (execute STATEMENT_NAME USING_DESCRIPTOR(optional) END)
+
+    EXECUTE_IMMEDIATE
+                   (execute immediate STRING        END)
+                   (execute immediate HOST_VARIABLE END)
+*_____________________________________________________________________________
+* Explain
+*_____________________________________________________________________________
+*
+    EXPLAIN        (explain EXPLAIN_OBJECT
+                    EXPLAIN_QUERYNO(optional)
+                    for SQL_STATEMENTS
+                   )
+
+    EXPLAIN_OBJECT (plan)
+                   (all)
+    EXPLAIN_QUERYNO(set queryno equals INTEGER)
+*_____________________________________________________________________________
+* Fetch
+*_____________________________________________________________________________
+*
+    FETCH          (fetch CURSOR_NAME into HOST_VARIABLE HOST_VARIABLE2(zero) END)
+    FETCH          (fetch CURSOR_NAME using descriptor DESCRIPTOR_NAME END)
+*_____________________________________________________________________________
+* Grant
+*_____________________________________________________________________________
+*
+    GRANT          (grant GRANTS END)
+    GRANTS         (GRANT_COLLECTION)
+                   (GRANT_DATABASE)
+                   (GRANT_PACKAGE)
+                   (GRANT_PLAN)
+                   (GRANT_SYSTEM)
+                   (GRANT_TABLE)
+                   (GRANT_USE)
+*_____________________________________________________________________________
+* Grant collection
+*_____________________________________________________________________________
+*
+    GRANT_COLLECTION
+                   (COLLECTION_TYPE
+                    ON_IN
+                    collection COLLECTION_OBJECT
+                    TO_AUTH(choice optional)
+                   )
+    COLLECTION_TYPE
+                   (create)
+                   (packadm)
+    ON_IN          (on)
+                   (in)
+
+    COLLECTION_OBJECT
+                   (COLLECTION_ID COLLECTION_ID2(zero))
+                   (star)
+    COLLECTION_ID2 (comma COLLECTION_ID)
+
+    TO_AUTH        (to PUBLIC_AUTH_ID PUBLIC_AUTH_ID2(zero))
+                   (with grant option)
+    PUBLIC_AUTH_ID (AUTH_ID)
+                   (public)
+    PUBLIC_AUTH_ID2(comma PUBLIC_AUTH_ID)
+
+    TO_FAR_AUTH    (to FAR_PUBLIC_AUTH_ID FAR_PUBLIC_AUTH_ID2(zero))
+                   (with grant option)
+    FAR_PUBLIC_AUTH_ID
+                   (AUTH_ID)
+                   (public)
+                   (public at all locations)
+    FAR_PUBLIC_AUTH_ID2
+                   (comma FAR_PUBLIC_AUTH_ID)
+    AUTH_ID        (VAR)
+    AUTH_ID2       (comma AUTH_ID)
+*_____________________________________________________________________________
+* Grant database
+*_____________________________________________________________________________
+*
+    GRANT_DATABASE (DATABASE_PRIVILEGE DATABASE_PRIVILEGE2(zero)
+                    on database DATABASE_NAME DATABASE_NAME2(zero)
+                    TO_AUTH
+                   )
+    DATABASE_PRIVILEGE2
+                   (comma DATABASE_PRIVILEGE)
+
+    DATABASE_PRIVILEGE
+                   (dbadm)
+                   (dbctrl)
+                   (dbmaint)
+                   (createtab)
+                   (createts)
+                   (displaydb)
+                   (drop)
+                   (imagcopy)
+                   (load)
+                   (recoverdb)
+                   (reorg)
+                   (repair)
+                   (startdb)
+                   (stats)
+                   (stopdb)
+
+    DATABASE_NAME  (VAR)
+    DATABASE_NAME2 (comma DATABASE_NAME)
+*_____________________________________________________________________________
+* Grant package
+*_____________________________________________________________________________
+*
+    GRANT_PACKAGE  (PACKAGE_PRIVILEGE PACKAGE_PRIVILEGE2(zero)
+                    on PACKAGE_OBJECT
+                    PACKAGE PACKAGE2(zero)
+                    TO_AUTH
+                   )
+                   (all
+                    on PACKAGE_OBJECT
+                    PACKAGE PACKAGE2(zero)
+                    TO_AUTH
+                   )
+    PACKAGE_PRIVILEGE2
+                   (comma PACKAGE_PRIVILEGE)
+    PACKAGE_PRIVILEGE
+                   (bind)
+                   (execute)
+                   (copy)
+                   (run)
+    PACKAGE_OBJECT (package)
+                   (program)
+    PACKAGE        (COLLECTION_ID dot star)
+                   (COLLECTION_ID dot PACKAGE_ID)
+    PACKAGE2       (comma PACKAGE)
+
+*_____________________________________________________________________________
+* Grant plan
+*_____________________________________________________________________________
+*
+    GRANT_PLAN     (PACKAGE_PRIVILEGE PACKAGE_PRIVILEGE2(zero)
+                    on plan PLAN_NAME PLAN_NAME2(zero)
+                    TO_AUTH
+                   )
+    PLAN_NAME      (VAR)
+    PLAN_NAME2     (comma PLAN_NAME)
+*_____________________________________________________________________________
+* Grant system
+*_____________________________________________________________________________
+*
+    GRANT_SYSTEM   (SYSTEM_PRIVILEGE SYSTEM_PRIVILEGE2(zero)
+                    TO_AUTH
+                   )
+    SYSTEM_PRIVILEGE2
+                   (comma SYSTEM_PRIVILEGE)
+    SYSTEM_PRIVILEGE
+                   (archive)
+                   (bindadd)
+                   (bindagent)
+                   (bsds)
+                   (createalias)
+                   (createdba)
+                   (createdbc)
+                   (createsg)
+                   (display)
+                   (monitor1)
+                   (monitor2)
+                   (recover)
+                   (stopall)
+                   (stospace)
+                   (sysadm)
+                   (sysctrl)
+                   (sysopr)
+                   (trace)
+*_____________________________________________________________________________
+* Grant table
+*_____________________________________________________________________________
+*
+    GRANT_TABLE    (TABLE_PRIVILEGE TABLE_PRIVILEGE2(zero)
+                    on table(optional) TABLE_NAME TABLE_NAME2(zero)
+                    TO_FAR_AUTH(choice optional)
+                   )
+                   (all privilege(optional)
+                    on table(optional) TABLE_NAME TABLE_NAME2(zero)
+                    TO_FAR_AUTH(choice optional)
+                   )
+    TABLE_PRIVILEGE2
+                   (comma TABLE_PRIVILEGE)
+    TABLE_PRIVILEGE(alter)
+                   (delete)
+                   (index)
+                   (insert)
+                   (select)
+                   (update TABLE_UPDATE)
+    TABLE_UPDATE   (openp COLUMN_NAME COLUMN_NAME2(zero) closep)
+    TABLE_NAME2    (comma TABLE_NAME)
+*_____________________________________________________________________________
+* Grant use
+*_____________________________________________________________________________
+*
+    GRANT_USE      (use of USE_OBJECT
+                    TO_AUTH
+                   )
+    USE_OBJECT     (bufferpool BP3           BP32(zero))
+                   (stogroup   STOGROUP_NAME STOGROUP_NAME2(zero))
+                   (tablespace DB_TS         DB_TS2(zero))
+    BP32           (comma BP3)
+    DB_TS          (TS1)
+                   (TS1 dot TS2)
+    TS1            (VAR)
+    TS2            (VAR)
+    DB_TS2         (comma DB_TS)
+*_____________________________________________________________________________
+* Include
+*_____________________________________________________________________________
+*
+    INCLUDE        (include sqlca END)
+                   (include sqlda END)
+                   (include VAR   END)
+*_____________________________________________________________________________
+* Insert
+*_____________________________________________________________________________
+*
+    INSERT         (insert into SELECT_TABLE openp COLUMN_NAME COLUMN_NAME2(zero) closep
+                    values INSERT_VALUES
+                    END
+                   )
+    INSERT_VALUES  (openp SELECT_EXPR SELECT_EXPR2(zero) closep)
+                   (SELECT)
+*_____________________________________________________________________________
+* Lock Table
+*_____________________________________________________________________________
+*
+    LOCK_TABLE     (lock TABLE_NAME in share     mode END)
+                   (lock TABLE_NAME in exclusive mode END)
+*_____________________________________________________________________________
+* Open
+*_____________________________________________________________________________
+*
+    OPEN           (open CURSOR_NAME USING_DESCRIPTOR(optional) END)
+    USING_DESCRIPTOR
+                   (using HOST_VARIABLE HOST_VARIABLE2(zero))
+                   (using descriptor DESCRIPTOR_NAME)
+*_____________________________________________________________________________
+* Prepare
+*_____________________________________________________________________________
+*
+    PREPARE        (prepare STATEMENT_NAME PREPARE_INTO(optional) END)
+    PREPARE_INTO   (into  DESCRIPTOR_NAME USING(optional))
+    USING          (using names)
+                   (using labels)
+                   (using any)
+                   (using both)
+*_____________________________________________________________________________
+* Revoke
+*_____________________________________________________________________________
+*
+    REVOKE         (revoke REVOKES END)
+    REVOKES        (REVOKE_COLLECTION)
+                   (REVOKE_DATABASE)
+                   (REVOKE_PACKAGE)
+                   (REVOKE_PLAN)
+                   (REVOKE_SYSTEM)
+                   (REVOKE_TABLE)
+                   (REVOKE_USE)
+*_____________________________________________________________________________
+* Revoke collection
+*_____________________________________________________________________________
+*
+    REVOKE_COLLECTION
+                   (COLLECTION_TYPE
+                    ON_IN
+                    collection COLLECTION_OBJECT
+                    FROM_AUTH(choice optional)
+                   )
+
+    FROM_AUTH      (from PUBLIC_AUTH_ID PUBLIC_AUTH_ID2(zero))
+                   (by AUTH_ID AUTH_ID2(zero))
+                   (by all)
+
+    FROM_FAR_AUTH  (from FAR_PUBLIC_AUTH_ID FAR_PUBLIC_AUTH_ID2(zero))
+                   (by all)
+
+*_____________________________________________________________________________
+* Revoke database
+*_____________________________________________________________________________
+*
+    REVOKE_DATABASE(DATABASE_PRIVILEGE DATABASE_PRIVILEGE2(zero)
+                    on database DATABASE_NAME DATABASE_NAME2(zero)
+                    FROM_AUTH
+                   )
+*_____________________________________________________________________________
+* Revoke package
+*_____________________________________________________________________________
+*
+    REVOKE_PACKAGE (PACKAGE_PRIVILEGE PACKAGE_PRIVILEGE2(zero)
+                    on PACKAGE_OBJECT
+                    PACKAGE PACKAGE2(zero)
+                    FROM_AUTH
+                   )
+                   (all
+                    on PACKAGE_OBJECT
+                    PACKAGE PACKAGE2(zero)
+                    FROM_AUTH
+                   )
+
+*_____________________________________________________________________________
+* REVOKE plan
+*_____________________________________________________________________________
+*
+    REVOKE_PLAN    (PACKAGE_PRIVILEGE PACKAGE_PRIVILEGE2(zero)
+                    on plan PLAN_NAME PLAN_NAME2(zero)
+                    FROM_AUTH
+                   )
+*_____________________________________________________________________________
+* REVOKE system
+*_____________________________________________________________________________
+*
+    REVOKE_SYSTEM  (SYSTEM_PRIVILEGE SYSTEM_PRIVILEGE2(zero)
+                    FROM_AUTH
+                   )
+*_____________________________________________________________________________
+* REVOKE table
+*_____________________________________________________________________________
+*
+    REVOKE_TABLE   (TABLE_PRIVILEGE TABLE_PRIVILEGE2(zero)
+                    on table(optional) TABLE_NAME TABLE_NAME2(zero)
+                    FROM_FAR_AUTH
+                   )
+                   (all privilege(optional)
+                    on table(optional) TABLE_NAME TABLE_NAME2(zero)
+                    FROM_FAR_AUTH
+                   )
+*_____________________________________________________________________________
+* REVOKE use
+*_____________________________________________________________________________
+*
+    REVOKE_USE     (use of USE_OBJECT
+                    FROM_AUTH
+                   )
+*_____________________________________________________________________________
+* SELECT statement
+*_____________________________________________________________________________
+*
+    SELECT_INTO    (SELECT_CLAUSE into HOST_VARIABLE HOST_VARIABLE2(zero)
+                    SELECT_FROM
+                    SELECT_WHERE
+                    END
+                   )
+*_____________________________________________________________________________
+* Set current packageset
+*_____________________________________________________________________________
+*
+    SET            (set HOST_VARIABLE equals CONSTANT END)
+*_____________________________________________________________________________
+* Set current packageset
+*_____________________________________________________________________________
+*
+    SET_CURRENT_PACKAGESET
+                   (set current packageset user     END)
+                   (set current packageset STRING   END)
+                   (set current packageset HOST_VARIABLE END)
+*_____________________________________________________________________________
+* Set current SQL ID
+*_____________________________________________________________________________
+*
+    SET_CURRENT_SQLID
+                   (set current sqlid user     END)
+                   (set current sqlid STRING   END)
+                   (set current sqlid HOST_VARIABLE END)
+*_____________________________________________________________________________
+* Update statement
+*_____________________________________________________________________________
+*
+    UPDATE         (update SELECT_TABLE
+                    set SET_CLAUSE SET_CLAUSE2(zero)
+                    WHERE_TYPE(optional)
+                    END
+                   )
+    SET_CLAUSE     (COLUMN_NAME equals SELECT_EXPR)
+    SET_CLAUSE2    (comma SET_CLAUSE)
+*_____________________________________________________________________________
+* Whenever
+*_____________________________________________________________________________
+*
+    WHENEVER       (whenever WHENEVER_CONDITION WHENEVER_ACTION END)
+    WHENEVER_CONDITION
+                   (not found)
+                   (sqlerror)
+                   (sqlwarning)
+    WHENEVER_ACTION(continue)
+                   (goto HOST_LABEL)
+                   (go to HOST_LABEL)
+    HOST_LABEL     (VAR)
+
+*_____________________________________________________________________________
+* Strings and numbers
+*_____________________________________________________________________________
+*
+    CONSTANT       (NUMBER)
+                   (STRING)
+    STRING         (STRINGS(repeat))
+    STRINGS        (QUOTE1 STRINGC(zero) QUOTE2)
+    STRINGC        (''''(not))
+    QUOTE1         ('''')
+    QUOTE2         ('''')
+
+    NUMBER         (INTEGER               EXPONENT(optional))
+                   (INTEGER  dot DECIMAL  EXPONENT(optional))
+                   (         dot DECIMAL  EXPONENT(optional))
+    INTEGER        (NUMERIC(repeat))
+    DECIMAL        (INTEGER)
+    EXPONENT       (Ee EPM(optional) INTEGER)
+    Ee             ('Ee'(choice))
+    EPM            ('+-'(choice))
+*_____________________________________________________________________________
+* Variables
+*_____________________________________________________________________________
+*
+    VAR            (       ALPHA(secondary) ALPHA_NUMERICS(zero))
+                   (double ALPHA(secondary) ALPHA_NUMERICS(zero) double)
+
+    ALPHA_NUMERICS (ALPHA)
+                   (NUMERIC)
+                   (SPECIAL)
+    ALPHA          ('abcdefghijklmnopqrstuvwxyz'(choice))
+                   ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'(choice))
+    NUMERIC        ('0123456789'                (choice))
+    SPECIAL        ('_@#$'                      (choice))
+*_____________________________________________________________________________
+* Terminal symbols
+*_____________________________________________________________________________
+*
+    -              (' ')
+    END            (semi)
+    add            ('add'        (mixed))
+    alias          ('alias'      (mixed))
+    all            ('all'        (mixed))
+    alter          ('alter'      (mixed))
+    and            ('and'        (mixed))
+    any            ('any'        (mixed))
+    archive        ('archive'    (mixed))
+    asc            ('asc'        (mixed))
+    as             ('as'         (mixed))
+    at             ('at'         (mixed))
+    audit          ('audit'      (mixed))
+    begin          ('begin'      (mixed))
+    between        ('between'    (mixed))
+    bind           ('bind'       (mixed))
+    bindadd        ('bindadd'    (mixed))
+    bindagent      ('bindagent'  (mixed))
+    bit            ('bit'        (mixed))
+    both           ('both'       (mixed))
+    bp0            ('bp0'        (mixed))
+    bp1            ('bp1'        (mixed))
+    bp2            ('bp2'        (mixed))
+    bp32k          ('bp32k'      (mixed))
+    bsds           ('bsds'       (mixed))
+    bufferpool     ('bufferpool' (mixed))
+    by             ('by'         (mixed))
+    capture        ('capture'    (mixed))
+    cascade        ('cascade'    (mixed))
+    changes        ('changes'    (mixed))
+    char           ('char'       (mixed))
+    character      ('character'  (mixed))
+    check          ('check'      (mixed))
+    close          ('close'      (mixed))
+    closep         (')')
+    cluster        ('cluster'    (mixed))
+    collection     ('collection' (mixed))
+    colon          (':')
+    column         ('column'     (mixed))
+    comma          (',')
+    comment        ('comment'    (mixed))
+    commit         ('commit'     (mixed))
+    connect        ('connect'    (mixed))
+    continue       ('continue'   (mixed))
+    copy           ('copy'       (mixed))
+    create         ('create'     (mixed))
+    createalias    ('createalias'(mixed))
+    createdba      ('createdba'  (mixed))
+    createdbc      ('createdbc'  (mixed))
+    createsg       ('createsg'   (mixed))
+    createtab      ('createtab'  (mixed))
+    createts       ('createts'   (mixed))
+    current        ('current'    (mixed))
+    cursor         ('cursor'     (mixed))
+    data           ('data'       (mixed))
+    database       ('database'   (mixed))
+    date           ('date'       (mixed))
+    dbadm          ('dbadm'      (mixed))
+    dbctrl         ('dbctrl'     (mixed))
+    dbmaint        ('dbmaint'    (mixed))
+    dec            ('dec'        (mixed))
+    decimal        ('decimal'    (mixed))
+    declare        ('declare'    (mixed))
+    default        ('default'    (mixed))
+    delete         ('delete'     (mixed))
+    desc           ('desc'       (mixed))
+    describe       ('describe'   (mixed))
+    descriptor     ('descriptor' (mixed))
+    display        ('display'    (mixed))
+    displaydb      ('displaydb'  (mixed))
+    dot            ('.')
+    double         ('"')
+    drop           ('drop'       (mixed))
+    dsetpass       ('dsetpass'   (mixed))
+    editproc       ('editproc'   (mixed))
+    end            ('end'        (mixed))
+    equals         ('=')
+    erase          ('erase'      (mixed))
+    escape         ('escape'     (mixed))
+    exclusive      ('exclusive'  (mixed))
+    execute        ('execute'    (mixed))
+    exists         ('exists'     (mixed))
+    explain        ('explain'    (mixed))
+    fetch          ('fetch'      (mixed))
+    found          ('found'      (mixed))
+    fieldproc      ('fieldproc'  (mixed))
+    float          ('float'      (mixed))
+    for            ('for'        (mixed))
+    foreign        ('foreign'    (mixed))
+    freepage       ('freepage'   (mixed))
+    from           ('from'       (mixed))
+    go             ('go'         (mixed))
+    goto           ('goto'       (mixed))
+    grant          ('grant'      (mixed))
+    graphic        ('graphic'    (mixed))
+    group          ('group'      (mixed))
+    having         ('having'     (mixed))
+    hold           ('hold'       (mixed))
+    imagcopy       ('imagcopy'   (mixed))
+    immediate      ('immediate'  (mixed))
+    in             ('in'         (mixed))
+    include        ('include'    (mixed))
+    index          ('index'      (mixed))
+    insert         ('insert'     (mixed))
+    int            ('int'        (mixed))
+    integer        ('integer'    (mixed))
+    into           ('into'       (mixed))
+    is             ('is'         (mixed))
+    key            ('key'        (mixed))
+    label          ('label'      (mixed))
+    labels         ('labels'     (mixed))
+    like           ('like'       (mixed))
+    load           ('load'       (mixed))
+    lock           ('lock'       (mixed))
+    locations      ('locations'  (mixed))
+    locksize       ('locksize'   (mixed))
+    long           ('long'       (mixed))
+    mixed          ('mixed'      (mixed))
+    mode           ('mode'       (mixed))
+    monitor1       ('monitor1'   (mixed))
+    monitor2       ('monitor2'   (mixed))
+    names          ('names'      (mixed))
+    no             ('no'         (mixed))
+    none           ('none'       (mixed))
+    not            ('not'        (mixed))
+    null           ('null'       (mixed))
+    numparts       ('numparts'   (mixed))
+    obid           ('obid'       (mixed))
+    of             ('of'         (mixed))
+    on             ('on'         (mixed))
+    only           ('only'       (mixed))
+    open           ('open'       (mixed))
+    openp          ('(')
+    option         ('option'     (mixed))
+    optimize       ('optimize'   (mixed))
+    order          ('order'      (mixed))
+    owner          ('owner'      (mixed))
+    packadm        ('packadm'    (mixed))
+    package        ('package'    (mixed))
+    packageset     ('packageset' (mixed))
+    page           ('page'       (mixed))
+    part           ('part'       (mixed))
+    password       ('password'   (mixed))
+    pctfree        ('pctfree'    (mixed))
+    plan           ('plan'       (mixed))
+    prepare        ('prepare'    (mixed))
+    primary        ('primary'    (mixed))
+    priqty         ('priqty'     (mixed))
+    privilege      ('privilege'  (mixed))
+    program        ('program'    (mixed))
+    public         ('public'     (mixed))
+    queryno        ('queryno'    (mixed))
+    read           ('read'       (mixed))
+    recover        ('recover'    (mixed))
+    recoverdb      ('recoverdb'  (mixed))
+    references     ('references' (mixed))
+    remove         ('remove'     (mixed))
+    reorg          ('reorg'      (mixed))
+    repair         ('repair'     (mixed))
+    reset          ('reset'      (mixed))
+    restrict       ('restrict'   (mixed))
+    revoke         ('revoke'     (mixed))
+    rollback       ('rollback'   (mixed))
+    roshare        ('roshare'    (mixed))
+    row            ('row'        (mixed))
+                   ('rows'       (mixed))
+    run            ('run'        (mixed))
+    sbcs           ('sbcs'       (mixed))
+    secqty         ('secqty'     (mixed))
+    section        ('section'    (mixed))
+    segsize        ('segsize'    (mixed))
+    select         ('select'     (mixed))
+    semi           (';')
+    server         ('server'      (mixed))
+    set            ('set'        (mixed))
+    share          ('share'      (mixed))
+*   shared         ('shared'     (mixed))
+*   single         ('''')
+    smallint       ('smallint'   (mixed))
+    sqlca          ('sqlca'      (mixed))
+    sqlda          ('sqlda'      (mixed))
+    sqlerror       ('sqlerror'   (mixed))
+    sqlid          ('sqlid'      (mixed))
+    sqlwarning     ('sqlwarning' (mixed))
+    star           ('star'       (mixed))
+    startdb        ('startdb'    (mixed))
+    statement      ('statement'  (mixed))
+    stats          ('stats'      (mixed))
+    stogroup       ('stogroup'   (mixed))
+    stopall        ('stopall'    (mixed))
+    stopdb         ('stopdb'     (mixed))
+    stospace       ('stospace'   (mixed))
+    subpages       ('subpages'   (mixed))
+    synonym        ('synonym'    (mixed))
+    sysadm         ('sysadm'     (mixed))
+    sysctrl        ('sysctrl'    (mixed))
+    sysopr         ('sysopr'     (mixed))
+    table          ('table'      (mixed))
+    tablespace     ('tablespace' (mixed))
+    time           ('time'       (mixed))
+    timestamp      ('timestamp'  (mixed))
+    timezone       ('timezone'    (mixed))
+    to             ('to'         (mixed))
+    trace          ('trace'      (mixed))
+    union          ('union'      (mixed))
+    unique         ('unique'     (mixed))
+    update         ('update'     (mixed))
+    use            ('use'        (mixed))
+    user           ('user'       (mixed))
+    using          ('using'      (mixed))
+    validproc      ('validproc'  (mixed))
+    values         ('values'     (mixed))
+    varchar        ('varchar'    (mixed))
+    vargraphic     ('vargraphic' (mixed))
+    vcat           ('vcat'       (mixed))
+    version        ('version'    (mixed))
+    view           ('view'       (mixed))
+    volumes        ('volumes'    (mixed))
+    whenever       ('whenever'   (mixed))
+    where          ('where'      (mixed))
+    with           ('with'       (mixed))
+    work           ('work'       (mixed))
+    yes            ('yes'        (mixed))
+   )
+  ignore   (- comma dot colon double)
+  string   (- VAR INTEGER STRING)
+ )
+
